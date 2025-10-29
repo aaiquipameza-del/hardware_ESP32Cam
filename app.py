@@ -138,21 +138,379 @@ def recognition_loop():
 
 @app.route('/')
 def index():
-    """Página principal"""
-    return jsonify({
-        "message": "API de Reconocimiento Facial ESP32-CAM",
-        "version": "1.0",
-        "endpoints": {
-            "/api/start": "POST - Iniciar reconocimiento",
-            "/api/stop": "POST - Detener reconocimiento",
-            "/api/status": "GET - Estado actual",
-            "/api/results": "GET - Últimos resultados",
-            "/api/latest": "GET - Último resultado",
-            "/api/stats": "GET - Estadísticas",
-            "/api/register": "POST - Registrar persona (JSON con 'name' y 'encodings')",
-            "/api/config": "PUT - Cambiar configuración"
-        }
-    })
+    """Página principal con HTML"""
+    html = """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>API Reconocimiento Facial</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            
+            h1 {
+                color: white;
+                text-align: center;
+                margin-bottom: 10px;
+                font-size: 2.5em;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            }
+            
+            .subtitle {
+                color: rgba(255,255,255,0.9);
+                text-align: center;
+                margin-bottom: 30px;
+                font-size: 1.1em;
+            }
+            
+            .dashboard {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 20px;
+                margin-bottom: 30px;
+            }
+            
+            .card {
+                background: white;
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                transition: transform 0.3s ease;
+            }
+            
+            .card:hover {
+                transform: translateY(-5px);
+            }
+            
+            .card h2 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.5em;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .card h2::before {
+                content: '🎯';
+                font-size: 1.2em;
+            }
+            
+            .status-badge {
+                display: inline-block;
+                padding: 5px 15px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 0.9em;
+                margin: 10px 0;
+            }
+            
+            .status-active {
+                background: #4CAF50;
+                color: white;
+            }
+            
+            .status-inactive {
+                background: #f44336;
+                color: white;
+            }
+            
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .stat-item {
+                background: #f5f5f5;
+                padding: 15px;
+                border-radius: 10px;
+                text-align: center;
+            }
+            
+            .stat-value {
+                font-size: 2em;
+                font-weight: bold;
+                color: #667eea;
+                display: block;
+            }
+            
+            .stat-label {
+                color: #666;
+                font-size: 0.9em;
+                margin-top: 5px;
+            }
+            
+            .controls {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                margin-bottom: 30px;
+            }
+            
+            button {
+                flex: 1;
+                min-width: 200px;
+                padding: 15px 30px;
+                border: none;
+                border-radius: 10px;
+                font-size: 1.1em;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                color: white;
+            }
+            
+            .btn-start {
+                background: linear-gradient(135deg, #4CAF50, #45a049);
+            }
+            
+            .btn-start:hover {
+                background: linear-gradient(135deg, #45a049, #3d8b40);
+                transform: scale(1.05);
+            }
+            
+            .btn-stop {
+                background: linear-gradient(135deg, #f44336, #da190b);
+            }
+            
+            .btn-stop:hover {
+                background: linear-gradient(135deg, #da190b, #c62828);
+                transform: scale(1.05);
+            }
+            
+            .btn-refresh {
+                background: linear-gradient(135deg, #2196F3, #0b7dda);
+            }
+            
+            .btn-refresh:hover {
+                background: linear-gradient(135deg, #0b7dda, #1976D2);
+                transform: scale(1.05);
+            }
+            
+            button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none !important;
+            }
+            
+            .endpoints {
+                background: white;
+                border-radius: 15px;
+                padding: 25px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            
+            .endpoints h2 {
+                color: #667eea;
+                margin-bottom: 20px;
+                font-size: 1.8em;
+            }
+            
+            .endpoint-item {
+                padding: 15px;
+                background: #f9f9f9;
+                border-left: 4px solid #667eea;
+                margin-bottom: 10px;
+                border-radius: 5px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .method {
+                display: inline-block;
+                padding: 5px 12px;
+                border-radius: 5px;
+                font-weight: bold;
+                font-size: 0.85em;
+                margin-right: 10px;
+            }
+            
+            .method-get { background: #2196F3; color: white; }
+            .method-post { background: #4CAF50; color: white; }
+            .method-put { background: #FF9800; color: white; }
+            
+            .loading {
+                text-align: center;
+                color: white;
+                font-size: 1.2em;
+                padding: 20px;
+            }
+            
+            .error {
+                background: #ffebee;
+                color: #c62828;
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🎭 Face Recognition API</h1>
+            <p class="subtitle">Sistema de Reconocimiento Facial con ESP32-CAM</p>
+            
+            <div class="controls">
+                <button class="btn-start" id="btnStart">▶️ Iniciar Reconocimiento</button>
+                <button class="btn-stop" id="btnStop" disabled>⏹️ Detener Reconocimiento</button>
+                <button class="btn-refresh" id="btnRefresh">🔄 Actualizar Datos</button>
+            </div>
+            
+            <div class="loading" id="loading">Cargando datos...</div>
+            
+            <div class="dashboard" id="dashboard" style="display: none;">
+                <div class="card">
+                    <h2>Estado del Sistema</h2>
+                    <div id="statusContent">Cargando...</div>
+                </div>
+                
+                <div class="card">
+                    <h2>📊 Estadísticas</h2>
+                    <div class="stats-grid" id="statsContent">
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalDetections">0</span>
+                            <span class="stat-label">Detecciones Totales</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="uniquePersons">0</span>
+                            <span class="stat-label">Personas Únicas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="unknownCount">0</span>
+                            <span class="stat-label">Desconocidos</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalResults">0</span>
+                            <span class="stat-label">Total Resultados</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="endpoints">
+                <h2>📡 Endpoints de la API</h2>
+                <div class="endpoint-item">
+                    <span><span class="method method-get">GET</span> <strong>/api/status</strong> - Estado actual</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-post">POST</span> <strong>/api/start</strong> - Iniciar reconocimiento</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-post">POST</span> <strong>/api/stop</strong> - Detener reconocimiento</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-get">GET</span> <strong>/api/results</strong> - Últimos resultados</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-get">GET</span> <strong>/api/latest</strong> - Último resultado</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-get">GET</span> <strong>/api/stats</strong> - Estadísticas</span>
+                </div>
+                <div class="endpoint-item">
+                    <span><span class="method method-put">PUT</span> <strong>/api/config</strong> - Cambiar configuración</span>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            const API_URL = window.location.origin + '/api';
+            
+            async function fetchData() {
+                try {
+                    const [statusRes, statsRes] = await Promise.all([
+                        fetch(API_URL + '/status'),
+                        fetch(API_URL + '/stats')
+                    ]);
+                    
+                    const status = await statusRes.json();
+                    const stats = await statsRes.json();
+                    
+                    // Mostrar dashboard
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'grid';
+                    
+                    // Actualizar estado
+                    const statusHtml = `
+                        <div class="status-badge ${status.active ? 'status-active' : 'status-inactive'}">
+                            ${status.active ? '🔴 ACTIVO' : '⚪ INACTIVO'}
+                        </div>
+                        <p><strong>Stream:</strong> ${status.stream_url}</p>
+                        <p><strong>Encodings:</strong> ${status.encodings_loaded ? '✅ Cargados' : '❌ No cargados'}</p>
+                        <p><strong>Total Resultados:</strong> ${status.total_results}</p>
+                    `;
+                    document.getElementById('statusContent').innerHTML = statusHtml;
+                    
+                    // Actualizar estadísticas
+                    document.getElementById('totalDetections').textContent = stats.total_detections || 0;
+                    document.getElementById('uniquePersons').textContent = stats.unique_persons || 0;
+                    document.getElementById('unknownCount').textContent = stats.unknown_count || 0;
+                    document.getElementById('totalResults').textContent = status.total_results || 0;
+                    
+                    // Actualizar botones
+                    document.getElementById('btnStart').disabled = status.active;
+                    document.getElementById('btnStop').disabled = !status.active;
+                    
+                } catch (error) {
+                    document.getElementById('loading').innerHTML = '<div class="error">❌ Error al cargar datos: ' + error.message + '</div>';
+                }
+            }
+            
+            document.getElementById('btnStart').addEventListener('click', async () => {
+                try {
+                    const response = await fetch(API_URL + '/start', { method: 'POST' });
+                    const data = await response.json();
+                    alert('✅ ' + data.message);
+                    fetchData();
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            });
+            
+            document.getElementById('btnStop').addEventListener('click', async () => {
+                try {
+                    const response = await fetch(API_URL + '/stop', { method: 'POST' });
+                    const data = await response.json();
+                    alert('🛑 ' + data.message);
+                    fetchData();
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            });
+            
+            document.getElementById('btnRefresh').addEventListener('click', () => {
+                fetchData();
+            });
+            
+            // Cargar datos iniciales
+            fetchData();
+            
+            // Actualizar cada 5 segundos
+            setInterval(fetchData, 5000);
+        </script>
+    </body>
+    </html>
+    """
+    return html
 
 @app.route('/api/start', methods=['POST'])
 def start_recognition():
