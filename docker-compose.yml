@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  face-recognition:
+    build: .
+    container_name: esp32cam-recognition
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Montar el directorio de capturas para persistencia
+      - ./capturas_registro:/app/capturas_registro
+      # Montar frames capturados
+      - ./captured_frames:/app/captured_frames
+      - ./recognition_results:/app/recognition_results
+      # Montar los archivos de datos para que persistan entre reinicios
+      - ./encodings.npy:/app/encodings.npy
+      - ./labels.json:/app/labels.json
+    environment:
+      - STREAM_URL=${STREAM_URL:-http://192.168.18.30:81/stream}
+    networks:
+      - esp32cam-network
+
+networks:
+  esp32cam-network:
+    driver: bridge
+
