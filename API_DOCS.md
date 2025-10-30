@@ -289,3 +289,5 @@ El sistema genera automáticamente:
 - Se mantienen los últimos 50 resultados en memoria
 - El umbral de reconocimiento por defecto es 0.6 (configurable)
 
+
+

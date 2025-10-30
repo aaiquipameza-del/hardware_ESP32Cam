@@ -421,6 +421,9 @@ def index():
                     <span><span class="method method-get">GET</span> <strong>/api/results</strong> - Últimos resultados</span>
                 </div>
                 <div class="endpoint-item">
+                    <span><span class="method method-get">GET</span> <strong>/api/results/&lt;name&gt;</strong> - Resultados por usuario</span>
+                </div>
+                <div class="endpoint-item">
                     <span><span class="method method-get">GET</span> <strong>/api/latest</strong> - Último resultado</span>
                 </div>
                 <div class="endpoint-item">
@@ -558,6 +561,24 @@ def get_results():
     return jsonify({
         "results": last_recognitions[-limit:],
         "total": len(last_recognitions)
+    })
+
+@app.route('/api/results/<name>', methods=['GET'])
+def get_results_by_name(name):
+    """Obtener resultados filtrados por nombre de usuario"""
+    limit = request.args.get('limit', 20, type=int)
+    
+    # Filtrar resultados por nombre
+    filtered_results = [r for r in last_recognitions if r.get("name", "").lower() == name.lower()]
+    
+    # Aplicar límite
+    limited_results = filtered_results[-limit:] if len(filtered_results) > limit else filtered_results
+    
+    return jsonify({
+        "user": name,
+        "results": limited_results,
+        "total": len(filtered_results),
+        "returned": len(limited_results)
     })
 
 @app.route('/api/latest', methods=['GET'])

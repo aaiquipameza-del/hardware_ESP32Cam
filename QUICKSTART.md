@@ -163,3 +163,5 @@ docker-compose logs  # Ver logs para diagnóstico
 
 Para más detalles, consulta `DEPLOYMENT.md` y `README.md`.
 
+
+
