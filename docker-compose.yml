@@ -6,7 +6,7 @@ services:
     container_name: esp32cam-recognition
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "${FLASK_PORT:-5000}:5000"
     volumes:
       # Montar el directorio de capturas para persistencia
       - ./capturas_registro:/app/capturas_registro
@@ -18,6 +18,7 @@ services:
       - ./labels.json:/app/labels.json
     environment:
       - STREAM_URL=${STREAM_URL:-http://192.168.18.30:81/stream}
+      - FLASK_PORT=5000
     networks:
       - esp32cam-network
 
