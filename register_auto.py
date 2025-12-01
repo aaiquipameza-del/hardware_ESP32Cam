@@ -9,11 +9,11 @@ import requests
 from pathlib import Path
 
 # === Configuración de cámara ===
-STREAM_URL = "http://192.168.18.30:81/stream"
+STREAM_URL = "http://192.168.122.116:81/stream"
 
 # Endpoints del flash (ajústalos a tu firmware/CameraWebServer si aplica)
-FLASH_ON_URL  = "http://192.168.18.30/control?var=led_intensity&val=255"
-FLASH_OFF_URL = "http://192.168.18.30/control?var=led_intensity&val=0"
+FLASH_ON_URL  = "http://192.168.122.116/control?var=led_intensity&val=255"
+FLASH_OFF_URL = "http://192.168.122.116/control?var=led_intensity&val=0"
 
 # === Almacenamiento ===
 SAVE_IMAGES = False

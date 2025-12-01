@@ -14,7 +14,7 @@ from pathlib import Path
 # STREAM_URL = "rtsp://<IP_o_dominio_del_broker>:8554/esp32"
 
 # ---- Elige UNA y descomenta:
-STREAM_URL = "http://192.168.18.30:81/stream"
+STREAM_URL = "http://192.168.122.116:81/stream"
 
 # === Archivos de embeddings ===
 ENCODINGS_NPY = "encodings.npy"

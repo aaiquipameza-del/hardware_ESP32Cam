@@ -1,5 +1,5 @@
 # app.py - API Flask para reconocimiento facial
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import cv2
 import json
@@ -24,7 +24,7 @@ RESULTS_DIR = "recognition_results"
 
 # Estado global
 recognition_active = False
-stream_url = os.getenv("STREAM_URL", "0")  # 0 = webcam local, o cambiar por URL de ESP32
+stream_url = "http://192.168.122.116:81/stream"
 last_recognitions = []
 current_frame = None
 recognition_thread = None
@@ -32,6 +32,31 @@ recognition_thread = None
 # Crear directorios
 os.makedirs(FRAMES_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+def gen_frames():
+    """Genera frames MJPEG desde el stream del ESP32 o webcam"""
+    cap = cv2.VideoCapture(stream_url, cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        print("❌ No se pudo abrir el stream:", stream_url)
+        while True:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + b'' + b'\r\n')
+    
+    print("📡 Enviando stream MJPEG en /video_feed desde:", stream_url)
+
+    while True:
+        success, frame = cap.read()
+        if not success:
+            continue
+        
+        # (Opcional) puedes reducir tamaño si quieres:
+        # frame = cv2.resize(frame, (640, 480))
+
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
 def load_encodings():
     """Cargar encodings faciales desde archivos"""
@@ -135,6 +160,8 @@ def recognition_loop():
     
     cap.release()
     print("🛑 Reconocimiento detenido")
+
+
 
 @app.route('/')
 def index():
@@ -514,6 +541,12 @@ def index():
     </html>
     """
     return html
+@app.route('/video_feed')
+def video_feed():
+    """Endpoint que entrega video MJPEG para la web"""
+    return Response(gen_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/api/start', methods=['POST'])
 def start_recognition():
