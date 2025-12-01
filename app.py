@@ -731,5 +731,7 @@ if __name__ == '__main__':
     else:
         print("⚠️ No se encontraron encodings. Registra personas primero con register_auto.py")
     
-    app.run(host='0.0.0.0', port=5001, debug=False)
+    # Usar puerto de variable de entorno o 5000 por defecto
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
 
