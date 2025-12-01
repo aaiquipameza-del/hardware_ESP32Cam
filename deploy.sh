@@ -20,7 +20,7 @@ fi
 
 EC2_IP=$1
 SSH_KEY=$2
-USER="ec2-user"  # Cambiar si usas otro usuario
+USER="ubuntu"  # Cambiar si usas otro usuario
 
 echo -e "${BLUE}🚀 Iniciando despliegue a EC2 ($EC2_IP)${NC}"
 
