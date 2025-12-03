@@ -62,7 +62,7 @@ EOF
 echo -e "${BLUE}📤 Copiando archivos al servidor...${NC}"
 scp -i "$SSH_KEY" -o StrictHostKeyChecking=no \
     Dockerfile docker-compose.yml requirements.txt .dockerignore \
-    register_auto.py recolive.py encodings.npy labels.json \
+    app.py register_auto.py recolive.py encodings.npy labels.json \
     $USER@$EC2_IP:~/hardware_ESP32Cam/
 
 # 4. Crear archivo .env si no existe
