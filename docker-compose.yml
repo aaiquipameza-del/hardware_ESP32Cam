@@ -17,8 +17,18 @@ services:
       - ./encodings.npy:/app/encodings.npy
       - ./labels.json:/app/labels.json
     environment:
-      - STREAM_URL=${STREAM_URL:-http://192.168.18.30:81/stream}
-      - FLASK_PORT=5000
+      # Variables requeridas
+      - STREAM_URL=${STREAM_URL:-http://192.168.122.116:81/stream}
+      - FLASK_PORT=${FLASK_PORT:-5000}
+      - FLASK_ENV=${FLASK_ENV:-production}
+      # Variables opcionales
+      - NEXTJS_WEBHOOK_URL=${NEXTJS_WEBHOOK_URL:-}
+      - FACIAL_RECOGNITION_WEBHOOK_SECRET=${FACIAL_RECOGNITION_WEBHOOK_SECRET:-}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DOWNSCALE=${DOWNSCALE:-0.5}
+      - THRESHOLD=${THRESHOLD:-0.6}
+      - AWS_SECRET_NAME=${AWS_SECRET_NAME:-}
     networks:
       - esp32cam-network
 
