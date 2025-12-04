@@ -10,6 +10,7 @@ import face_recognition
 from pathlib import Path
 from datetime import datetime, timedelta
 import os
+import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -22,16 +23,52 @@ DOWNSCALE = 0.5
 FRAMES_DIR = "captured_frames"
 RESULTS_DIR = "recognition_results"
 
+# Webhook configuration for Next.js integration
+WEBHOOK_URL = os.getenv('NEXTJS_WEBHOOK_URL', '')
+WEBHOOK_SECRET = os.getenv('FACIAL_RECOGNITION_WEBHOOK_SECRET', '')
+
 # Estado global
 recognition_active = False
 stream_url = "http://192.168.122.116:81/stream"
 last_recognitions = []
 current_frame = None
 recognition_thread = None
+known_encs = None
+labels = []
 
 # Crear directorios
 os.makedirs(FRAMES_DIR, exist_ok=True)
 os.makedirs(RESULTS_DIR, exist_ok=True)
+
+def send_webhook(result, camera_id=None, camera_stream_url=None):
+    """Enviar resultado de detección al webhook de Next.js"""
+    if not WEBHOOK_URL:
+        return
+    
+    try:
+        payload = {
+            "result": result,
+            "camera_id": camera_id,
+            "camera_stream_url": camera_stream_url or stream_url
+        }
+        
+        headers = {"Content-Type": "application/json"}
+        if WEBHOOK_SECRET:
+            headers["Authorization"] = f"Bearer {WEBHOOK_SECRET}"
+        
+        response = requests.post(
+            WEBHOOK_URL,
+            json=payload,
+            headers=headers,
+            timeout=5
+        )
+        
+        if response.status_code == 201:
+            print(f"✅ Webhook enviado: {result['name']}")
+        else:
+            print(f"⚠️ Webhook falló: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"❌ Error enviando webhook: {e}")
 
 def gen_frames():
     """Genera frames MJPEG desde el stream del ESP32 o webcam"""
@@ -142,6 +179,10 @@ def recognition_loop():
             
             # Guardar en lista de resultados
             last_recognitions.append(result)
+            
+            # ✨ NUEVO: Enviar webhook a Next.js
+            send_webhook(result, camera_id=None, camera_stream_url=stream_url)
+            
             if len(last_recognitions) > 50:  # Mantener solo últimos 50
                 last_recognitions.pop(0)
             
@@ -672,13 +713,56 @@ def update_config():
 
 @app.route('/api/register', methods=['POST'])
 def register_person():
-    """Registrar una nueva persona"""
-    # Esta función requiere implementación adicional
-    # Por ahora, usar register_auto.py manualmente
-    return jsonify({
-        "message": "Usa el script register_auto.py para registrar personas",
-        "instructions": "Ejecuta: python register_auto.py"
-    })
+    """Registrar una nueva persona con encoding facial"""
+    global known_encs, labels
+    
+    data = request.json
+    name = data.get('name')
+    encoding = data.get('encoding')  # Array de 128 números
+    image_url = data.get('image_url')
+    client_id = data.get('client_id')
+    
+    if not name or not encoding:
+        return jsonify({"error": "name and encoding are required"}), 400
+    
+    try:
+        # Convertir encoding a numpy array
+        enc_array = np.array(encoding, dtype=np.float32)
+        
+        # Validar que sea un array de 128 dimensiones
+        if enc_array.shape != (128,):
+            return jsonify({
+                "error": f"Encoding must be 128-dimensional, got {enc_array.shape}"
+            }), 400
+        
+        # Cargar encodings existentes
+        if Path(ENCODINGS_NPY).exists() and Path(LABELS_JSON).exists():
+            known_encs = np.load(ENCODINGS_NPY)
+            with open(LABELS_JSON, "r", encoding="utf-8") as f:
+                labels = json.load(f)
+        else:
+            known_encs = np.array([]).reshape(0, 128)
+            labels = []
+        
+        # Agregar nuevo encoding
+        known_encs = np.vstack([known_encs, enc_array.reshape(1, -1)])
+        labels.append(name)
+        
+        # Guardar
+        np.save(ENCODINGS_NPY, known_encs)
+        with open(LABELS_JSON, "w", encoding="utf-8") as f:
+            json.dump(labels, f, ensure_ascii=False, indent=2)
+        
+        print(f"✅ Usuario {name} registrado exitosamente")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Usuario {name} registrado exitosamente",
+            "total_users": len(labels)
+        })
+    except Exception as e:
+        print(f"❌ Error registrando usuario: {e}")
+        return jsonify({"error": str(e)}), 500
 
 def add_seed_results():
     """Agregar 5 resultados de prueba al inicio"""
